@@ -1,5 +1,5 @@
 from django.shortcuts import render
-# from rest_framework.views import APIView
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from api.serializers import UserRegisterSerializer, MovieSerializer,BookingSerializer
@@ -9,7 +9,6 @@ import json , requests
 from django.http import JsonResponse, HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework import serializers
-# Create your views here.
 
 
 class MySerialize(serializers.Serializer):
@@ -25,6 +24,7 @@ class MySerialize(serializers.Serializer):
         if not value:
             raise serializers.ValidationError("Enter the movie type")
         return value
+
 
 class PaySerialize(serializers.Serializer):
     Movieprice = serializers.CharField()
@@ -52,34 +52,33 @@ class PaySerialize(serializers.Serializer):
             raise serializers.ValidationError("Enter your ID")
         return value
 
-class Register(generics.ListCreateAPIView):
-    serializer_class = UserRegisterSerializer
-    queryset = UserDetails.objects.all()
+
 @api_view(['GET', 'POST'])
 def validate(request):
-    # print(request.headers)
     request_object=json.loads(request.body)
     return_object= {"details":request_object['name']}
     return JsonResponse(return_object,safe=False)
 
 def register_user(request):
     request_object=json.loads(request.body)
-    print('request---->',request_object)
     queryset = UserDetails()
-    queryset.UserID= request_object['UserID']
-    queryset.Username= request_object['Username']
-    queryset.email_id= request_object['email_id']
-    queryset.password= request_object['password']
-    queryset.save()
-    return_object= {"message":"user added successfully"}
-    return JsonResponse(return_object,safe=False)
+    user_exist=UserDetails.objects.filter(email_id= request_object['email_id']).exists()
+    if user_exist==False:
+        queryset.Username= request_object['Username']
+        queryset.email_id= request_object['email_id']
+        queryset.password= request_object['password']
+        repeat = queryset.save()
+        return_object= {"message":"user added successfully"}
+        return JsonResponse(return_object,safe=False)
+    else:
+        return JsonResponse({"messsage":"user already exist"})
 
 def validate_user(request,pk=None):
     request_object=json.loads(request.body)
-    user_details=UserDetails.objects.filter(UserID= request_object['UserID'],password=request_object['password'])
-    print(user_details)
-    if user_details:
-        if request.method=='POST':
+    user_details=UserDetails.objects.filter(UserID= request_object['UserID'])
+    user_password=UserDetails.objects.filter(password= request_object['password']).exists()
+    if user_details and request.method=='POST':
+        if user_password==True:
             id=pk
             if id is not None:
                 movie = MovieDetails.objects.filter(MovieID=id)
@@ -90,26 +89,23 @@ def validate_user(request,pk=None):
             serializer = MovieSerializer(movie, many=True)
             print(serializer.data)
             return JsonResponse(serializer.data,safe=False)
+        else:
+            return_object={"message":"Invalid Password"}
     else:
-        return_object= {"message":"invalid credentials"}
+        return_object= {"message":"Invalid credentials"}
     return JsonResponse(return_object,safe=False)
 
-
-class Movie(generics.ListCreateAPIView):
-    serializer_class = MovieSerializer
-    queryset = MovieDetails.objects.all()
 
 def movie_list(request):
     request_object=json.loads(request.body)
-    print('movielist---->',request_object)
     queryset = MovieDetails()
-    queryset.MovieID= request_object['MovieID']
     queryset.Moviename= request_object['Moviename']
     queryset.Movietype= request_object['Movietype']
+    queryset.Movieprice= request_object['Movieprice']
     queryset.save()
-    print('MOvieeeeeeeeeeeeeee',queryset)
     return_object= {"message":"Movie added successfully"}
     return JsonResponse(return_object,safe=False)
+
 
 @api_view(['GET', 'POST'])
 def get_movie(request):
@@ -135,12 +131,16 @@ def get_movie(request):
 def book_movie(request):
     if request.method == 'POST':
         post_data = json.loads(request.body)
+        print(post_data,"@@@@@@@@@@")
         id = post_data['MovieID']
+        print(id)
         quantity = post_data['Quantity']
         price_movie = post_data['Movieprice']
         serial = PaySerialize(data=post_data)
 
         if serial.is_valid():
+            user = UserDetails.objects.filter(UserID=request.body['UserID']).exists()
+            print(user,"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
             get_movie = MovieDetails.objects.filter(MovieID=id)
             serializer = list(get_movie.values())
             calculated_price = int(serializer[0]['Movieprice']) * int(quantity)
@@ -150,7 +150,10 @@ def book_movie(request):
                 return JsonResponse({
                     'Message': 'Ticket has been booked'
                 })
-
+        else: 
+            return JsonResponse({
+                'error': serial.errors,
+            })
         return JsonResponse({
             'message': 'Inappropriate Amount',
         })

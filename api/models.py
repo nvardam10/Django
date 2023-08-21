@@ -2,10 +2,10 @@ from django.db import models
 
 # Create your models here.
 class UserDetails(models.Model):
-    UserID=models.IntegerField(unique=True, primary_key=True)
+    UserID=models.AutoField(primary_key=True)
     Username=models.CharField(max_length=100)
     date_added = models.DateField(auto_now = True)
-    email_id =models.EmailField()
+    email_id =models.EmailField(unique=True)
     password=models.TextField()
 
     def __str__(self):
@@ -13,7 +13,7 @@ class UserDetails(models.Model):
     
 
 class MovieDetails(models.Model):
-    MovieID=models.IntegerField(primary_key=True)
+    MovieID=models.AutoField(primary_key=True)
     Moviename=models.CharField(max_length=100)
     date_added = models.DateField(auto_now_add=True)
     Movietype=models.CharField(max_length=100)

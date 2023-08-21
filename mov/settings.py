@@ -25,20 +25,23 @@ SECRET_KEY = 'django-insecure-09#edu$#jeodh)d6pbcmz@5s=)h)()s@tijd)(y)vjlyjezy=k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
     'api',
+    'movie',
+    'corsheaders',
+    
     
 ]
 
@@ -50,7 +53,23 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# CORS_ORIGIN_WHITELIST = [ 'http://localhost:3000', ]
 
 ROOT_URLCONF = 'mov.urls'
 
@@ -82,7 +101,7 @@ DATABASES = {
         'NAME':'movies_db_new',
         'USER':'postgres',
         'PASSWORD':'Admin@123',
-        'HOST':'localhost',
+        'HOST':'host.docker.internal',
         'PORT':'5432'
     }
 }
